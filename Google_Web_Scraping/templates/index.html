@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Engine</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-container input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-container select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-container button {
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .search-container button:hover {
+            background-color: #0056b3;
+        }
+        .results-container {
+            display: flex;
+            gap: 20px;
+        }
+        .results-container .search-results {
+            flex: 2;
+        }
+        .results-container .saved-results {
+            flex: 1;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.querySelector('form');
+            const searchInput = document.querySelector('input[name="query"]');
+
+            // Enable search on Enter key press
+            searchInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent form submission if needed
+                    searchForm.submit(); // Submit the form
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Search Engine</h1>
+    <form method="POST" action="/">
+        <div class="search-container">
+            <select name="engine">
+                <option value="google">Google</option>
+                <option value="bing">Bing</option>
+                <option value="duckduckgo">DuckDuckGo</option>
+                <option value="pubmed">PubMed</option>
+                <option value="scholar">Google Scholar</option>
+                <option value="arxiv">arXiv</option>
+            </select>
+            <input type="text" name="query" placeholder="What is your question?" value="{{ query if query else '' }}" required>
+            <button type="submit">Search</button>
+        </div>
+    </form>
+
+    <div class="results-container">
+        <div class="search-results">
+            {% if results %}
+                <h2>Results for "{{ query }}"</h2>
+                <ul>
+                    {% for result in results %}
+                        <li>
+                            <strong>{{ result.title }}</strong><br>
+                            <a href="{{ result.link }}" target="_blank">{{ result.link }}</a><br>
+                            <em>Source: {{ result.source }} | Type: {{ result.type }}</em>
+                            <form action="{{ url_for('save_result') }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="result_title" value="{{ result.title }}">
+                                <input type="hidden" name="result_link" value="{{ result.link }}">
+                                <input type="hidden" name="result_source" value="{{ result.source }}">
+                                <input type="hidden" name="result_type" value="{{ result.type }}">
+                                <button type="submit">Save</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="pagination">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('index', page=page-1, query=query) }}">Previous</a>
+                    {% endif %}
+                    <span>Page {{ page }} of {{ total_pages }}</span>
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('index', page=page+1, query=query) }}">Next</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="saved-results">
+            <h2>Saved Results</h2>
+            <ul>
+                {% if session.saved_results %}
+                    {% for saved_result in session.saved_results %}
+                        <li>
+                            <strong>{{ saved_result.title }}</strong><br>
+                            <a href="{{ saved_result.link }}" target="_blank">{{ saved_result.link }}</a><br>
+                            <em>Source: {{ saved_result.source }} | Type: {{ saved_result.type }}</em>
+                            <form action="{{ url_for('delete_saved_result') }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="index" value="{{ loop.index0 }}">
+                                <button type="submit" style="color: red;">Delete</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li>No saved results yet.</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
